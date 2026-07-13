@@ -114,10 +114,18 @@ async function ComparisonResult({
     getVersionSummary(rightVersionId),
   ]);
 
-  if (!leftResult.ok || !rightResult.ok) {
+  if (!leftResult.ok) {
     return (
       <p className="mt-8 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
-        {!leftResult.ok ? leftResult.error : (rightResult as { ok: false }).error}
+        {leftResult.error}
+      </p>
+    );
+  }
+
+  if (!rightResult.ok) {
+    return (
+      <p className="mt-8 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+        {rightResult.error}
       </p>
     );
   }

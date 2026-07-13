@@ -10,7 +10,8 @@ export function interpolateTemplate(
   values: Record<string, string>
 ): string {
   return templateText.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, name) => {
-    return name in values ? values[name] : match;
+    const value = values[name];
+    return value !== undefined ? value : match;
   });
 }
 

@@ -98,7 +98,10 @@ export function extractVariableNames(templateText: string): string[] {
   const matches = templateText.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g);
   const names = new Set<string>();
   for (const match of matches) {
-    names.add(match[1]);
+    const name = match[1];
+    if (name !== undefined) {
+      names.add(name);
+    }
   }
   return Array.from(names);
 }
