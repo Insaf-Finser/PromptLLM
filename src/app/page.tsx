@@ -43,7 +43,7 @@ export default async function HomePage() {
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-lg text-neutral-500">
           PromptDesk versions every prompt you write, runs it against real test
-          cases, and shows you the pass rate — so "I tweaked it" becomes a
+          cases, and shows you the pass rate — so &ldquo;I tweaked it&rdquo; becomes a
           number, not a feeling.
         </p>
         <div className="mt-8 flex items-center justify-center gap-3">

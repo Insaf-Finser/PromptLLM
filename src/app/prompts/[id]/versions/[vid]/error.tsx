@@ -9,7 +9,7 @@ export default function VersionDetailError({
 }) {
   return (
     <main className="mx-auto flex max-w-[680px] flex-col items-center gap-3 px-6 py-24 text-center">
-      <p className="font-medium text-neutral-900">Couldn't load this version</p>
+      <p className="font-medium text-neutral-900">Couldn&apos;t load this version</p>
       <p className="text-sm text-neutral-500">{error.message}</p>
       <button
         onClick={reset}

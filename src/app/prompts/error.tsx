@@ -13,7 +13,7 @@ export default function PromptsError({
   return (
     <main className="mx-auto flex max-w-[680px] flex-col items-center gap-3 px-6 py-24 text-center">
       <p className="font-medium text-neutral-900">
-        Couldn't load your prompts
+        Couldn&apos;t load your prompts
       </p>
       <p className="text-sm text-neutral-500">
         {error.message === "UNAUTHENTICATED"
