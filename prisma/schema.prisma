@@ -1,0 +1,135 @@
+// PromptDesk — Database Schema
+// Schema-first: this is locked before any feature code is written.
+// Every downstream type/query inherits this contract.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum EvalRunStatus {
+  pending
+  running
+  completed
+  failed
+}
+
+// ─────────────────────────────────────────────
+// User & Auth
+// ─────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  prompts Prompt[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// Prompt & Versions
+// ─────────────────────────────────────────────
+
+model Prompt {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versions  PromptVersion[]
+  testCases TestCase[]
+
+  @@index([userId])
+  @@map("prompts")
+}
+
+model PromptVersion {
+  id             String   @id @default(uuid())
+  promptId       String   @map("prompt_id")
+  versionNumber  Int      @map("version_number")
+  templateText   String   @map("template_text") @db.Text
+  variableNames  String[] @map("variable_names") // parsed from templateText at save time
+  model          String   // e.g. "claude-sonnet-4-6" — required, never inherited implicitly
+  systemPrompt   String?  @map("system_prompt") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  prompt   Prompt     @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  evalRuns EvalRun[]
+
+  @@unique([promptId, versionNumber])
+  @@index([promptId])
+  @@map("prompt_versions")
+}
+
+// ─────────────────────────────────────────────
+// Test Cases (Prompt-level, shared across versions —
+// this is what makes version comparison meaningful)
+// ─────────────────────────────────────────────
+
+model TestCase {
+  id                String   @id @default(uuid())
+  promptId          String   @map("prompt_id")
+  name              String
+  variableValues    Json     @map("variable_values") // e.g. {"customer_name": "Alex"}
+  expectedCriteria  String   @map("expected_criteria") @db.Text // required — ungraded-by-design is not allowed
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  prompt      Prompt       @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  evalResults EvalResult[]
+
+  @@index([promptId])
+  @@map("test_cases")
+}
+
+// ─────────────────────────────────────────────
+// Eval Runs & Results
+// ─────────────────────────────────────────────
+
+model EvalRun {
+  id              String        @id @default(uuid())
+  promptVersionId String        @map("prompt_version_id")
+  status          EvalRunStatus @default(pending)
+  startedAt       DateTime?     @map("started_at")
+  completedAt     DateTime?     @map("completed_at")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  promptVersion PromptVersion @relation(fields: [promptVersionId], references: [id], onDelete: Cascade)
+  results       EvalResult[]
+
+  @@index([promptVersionId])
+  @@map("eval_runs")
+}
+
+model EvalResult {
+  id          String   @id @default(uuid())
+  evalRunId   String   @map("eval_run_id")
+  testCaseId  String   @map("test_case_id")
+  outputText  String?  @map("output_text") @db.Text // null if the call failed
+  latencyMs   Int?     @map("latency_ms")
+  pass        Boolean? // null = ungraded yet — never defaults to false
+  graderNotes String?  @map("grader_notes")
+  error       String?  // populated if this specific call failed; run still completes
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  evalRun  EvalRun  @relation(fields: [evalRunId], references: [id], onDelete: Cascade)
+  testCase TestCase @relation(fields: [testCaseId], references: [id], onDelete: Cascade)
+
+  @@unique([evalRunId, testCaseId])
+  @@index([evalRunId])
+  @@index([testCaseId])
+  @@map("eval_results")
+}
