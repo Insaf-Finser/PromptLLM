@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import * as argon2 from "argon2";
+import bcrypt from "bcryptjs";
 import { db } from "./db";
 import { loginSchema } from "./validators";
 
@@ -56,7 +56,7 @@ export const authOptions: NextAuthOptions = {
         const user = await db.user.findUnique({ where: { email } });
         if (!user) return null;
 
-        const valid = await argon2.verify(user.passwordHash, password);
+        const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
         return { id: user.id, email: user.email };
@@ -77,4 +77,10 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+  // No custom `cookies` block here on purpose: NextAuth's default cookie
+  // config already sets httpOnly + SameSite=Lax, and automatically uses
+  // the `__Secure-` name prefix only when NEXTAUTH_URL is https:// —
+  // hardcoding that prefix ourselves broke cookie storage on http://
+  // localhost, since browsers silently refuse to set a `__Secure-`
+  // prefixed cookie without the Secure attribute.
 };

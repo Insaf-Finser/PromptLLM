@@ -1,14 +1,19 @@
 import { PrismaClient } from "@prisma/client";
-import * as argon2 from "argon2";
+import bcrypt from "bcryptjs";
 
 const db = new PrismaClient();
 
 async function main() {
-  const passwordHash = await argon2.hash("demo1234", { type: argon2.argon2id });
+  const passwordHash = await bcrypt.hash("demo1234", 12);
 
   const user = await db.user.upsert({
     where: { email: "demo@demo.com" },
-    update: {},
+    // Update the hash even if the user already exists — important after
+    // switching hashing algorithms (argon2 -> bcryptjs). Without this, a
+    // demo user seeded before the switch keeps its old argon2-format hash
+    // forever, which bcrypt.compare will simply never match (not an
+    // error, just an always-false comparison against the wrong format).
+    update: { passwordHash },
     create: { email: "demo@demo.com", passwordHash },
   });
 

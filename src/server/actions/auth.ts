@@ -1,6 +1,6 @@
 "use server";
 
-import * as argon2 from "argon2";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { signupSchema } from "@/lib/validators";
 import type { ActionResult } from "@/types";
@@ -22,7 +22,11 @@ export async function signupUser(
     return { ok: false, error: "Could not create account with those details" };
   }
 
-  const passwordHash = await argon2.hash(password, { type: argon2.argon2id });
+  // bcrypt cost factor 12, per the spec's "Argon2id (or bcrypt cost >=12)"
+  // requirement. Using bcryptjs specifically (pure JS, no native binary) —
+  // argon2's compiled binding has no prebuild for newer Node ABIs on
+  // Vercel, which crashed every page in production at runtime.
+  const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await db.user.create({
     data: { email, passwordHash },
