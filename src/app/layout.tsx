@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Nav } from "@/components/nav";
 import { Providers } from "./providers";
+import { Analytics } from "@vercel/analytics/next";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://promptdesk.example.com";
 
@@ -73,6 +74,7 @@ export default function RootLayout({
           <Nav />
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   );
